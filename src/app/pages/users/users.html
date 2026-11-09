@@ -1,0 +1,105 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">
+    Usuarios <span class="badge text-bg-secondary">{{ users().length }}</span>
+  </h1>
+  <div class="d-flex gap-2">
+    <button class="btn btn-outline-secondary btn-sm" (click)="load()" [disabled]="loading()">Recargar</button>
+    @if (auth.isAdmin()) {
+      <button class="btn btn-primary btn-sm" (click)="openNew()">Nuevo usuario</button>
+    }
+  </div>
+</div>
+
+@if (message(); as m) {
+  <div class="alert alert-dismissible py-2" [class.alert-success]="m.type === 'success'" [class.alert-danger]="m.type === 'danger'">
+    {{ m.text }}
+    <button type="button" class="btn-close" aria-label="Cerrar" (click)="message.set(null)"></button>
+  </div>
+}
+
+@if (!auth.isAdmin()) {
+  <div class="alert alert-info py-2">Tu rol es <strong>USER</strong>: solo puedes consultar la lista.</div>
+}
+
+@if (editing() !== null) {
+  <div class="card shadow-sm mb-3">
+    <div class="card-body">
+      <h2 class="h6">{{ editing() === 'new' ? 'Nuevo usuario' : 'Editar usuario #' + editing() }}</h2>
+      <form [formGroup]="form" (ngSubmit)="save()" class="row g-2" novalidate>
+        <div class="col-md-4">
+          <input class="form-control" placeholder="Usuario" formControlName="username"
+            [class.is-invalid]="form.controls.username.touched && form.controls.username.invalid" />
+        </div>
+        <div class="col-md-4">
+          <input type="password" class="form-control" placeholder="Contraseña" formControlName="password"
+            autocomplete="new-password"
+            [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid" />
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" formControlName="role">
+            @for (r of roles; track r) {
+              <option [value]="r">{{ r }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+          <button class="btn btn-success flex-fill">Guardar</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="cancel()">×</button>
+        </div>
+      </form>
+      @if (editing() !== 'new') {
+        <div class="form-text">Debes indicar la contraseña (nueva o la misma) para actualizar.</div>
+      }
+    </div>
+  </div>
+}
+
+@if (toDelete(); as u) {
+  <div class="alert alert-warning d-flex justify-content-between align-items-center py-2">
+    <span>¿Eliminar al usuario <strong>{{ u.username }}</strong>?</span>
+    <span class="d-flex gap-2">
+      <button class="btn btn-danger btn-sm" (click)="doDelete()">Eliminar</button>
+      <button class="btn btn-outline-secondary btn-sm" (click)="toDelete.set(null)">Cancelar</button>
+    </span>
+  </div>
+}
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle bg-white">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Usuario</th>
+        <th>Rol</th>
+        @if (auth.isAdmin()) {
+          <th class="text-end">Acciones</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of users(); track u.id) {
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.username }}</td>
+          <td>
+            <span class="badge" [class.text-bg-danger]="u.role === 'ADMIN'" [class.text-bg-primary]="u.role !== 'ADMIN'">
+              {{ u.role }}
+            </span>
+          </td>
+          @if (auth.isAdmin()) {
+            <td class="text-end">
+              <button class="btn btn-outline-primary btn-sm me-1" (click)="openEdit(u)">Editar</button>
+              <button class="btn btn-outline-danger btn-sm" (click)="confirmDelete(u)">Eliminar</button>
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="auth.isAdmin() ? 4 : 3" class="text-center text-muted py-4">
+            {{ loading() ? 'Cargando…' : 'No hay usuarios.' }}
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
